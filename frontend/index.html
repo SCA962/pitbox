@@ -1,33 +1,13 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo Taller ERP</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <div id="login-container">
-        <h1>Iniciar Sesión</h1>
-        <form id="login-form">
-            <input type="email" id="email" placeholder="Correo Electrónico" required>
-            <input type="password" id="password" placeholder="Contraseña" required>
-            <button type="submit">Entrar</button>
-        </form>
-        <p id="login-error" class="error-message"></p>
-    </div>
-
-    <div id="dashboard-container" style="display: none;">
-        <h1 id="welcome-message"></h1>
-        <button id="logout-button">Cerrar Sesión</button>
-        <hr>
-        <h2>Mis Clientes</h2>
-        <button id="fetch-clients-button">Cargar Clientes</button>
-        <ul id="clients-list"></ul>
-        <p id="dashboard-error" class="error-message"></p>
-    </div>
-
-    <script src="app.js"></script>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PitBox</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
