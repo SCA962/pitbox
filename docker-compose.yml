@@ -12,9 +12,9 @@ services:
       - "8000:8000"
     env_file:
       - ./.env
-    # AÑADIMOS ESTA SECCIÓN PARA PASAR LA VARIABLE EXPLÍCITAMENTE
+    # Explicitly define the database server for the backend
     environment:
-      - POSTGRES_SERVER=db  # <-- Le decimos al backend que el servidor de la DB se llama "db"
+      - POSTGRES_SERVER=db
     depends_on:
       db:
         condition: service_healthy
@@ -23,8 +23,14 @@ services:
     image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+    # Read variables from .env file
     env_file:
       - ./.env
+    # Also explicitly define environment variables to ensure they are set on initialization
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "5432:5432"
     healthcheck:
