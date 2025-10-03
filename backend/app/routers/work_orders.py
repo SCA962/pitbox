@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from .. import crud, models, schemas
+from ..crud import crud_work_orders, crud_vehicles
+from .. import models, schemas
 from ..database import get_db
 from ..security import get_current_user
 
 router = APIRouter(
     prefix="/work_orders",
-    tags=["Work Orders"], # Consistencia
+    tags=["Work Orders"],
     dependencies=[Depends(get_current_user)]
 )
 
@@ -23,7 +24,7 @@ def create_work_order(
     """
     # **VALIDACIÓN CRÍTICA**: Verificamos que el vehículo exista DENTRO del tenant del usuario.
     # Esto previene crear órdenes para vehículos de otros talleres.
-    vehicle = crud.get_vehicle(db, vehicle_id=work_order.vehicle_id, tenant_id=current_user.tenant_id)
+    vehicle = crud_vehicles.get_vehicle(db, vehicle_id=work_order.vehicle_id, tenant_id=current_user.tenant_id)
     if not vehicle:
         raise HTTPException(
             status_code=404, 
@@ -37,7 +38,7 @@ def create_work_order(
             detail=f"El vehículo {vehicle.id} no pertenece al cliente {work_order.client_id}."
         )
 
-    return crud.create_work_order(db=db, work_order=work_order)
+    return crud_work_orders.create_work_order(db=db, work_order=work_order)
 
 @router.get("/", response_model=List[schemas.WorkOrder])
 def read_work_orders(
@@ -49,7 +50,7 @@ def read_work_orders(
     """
     Devuelve una lista de todas las órdenes de trabajo del tenant del usuario.
     """
-    work_orders = crud.get_work_orders(db, tenant_id=current_user.tenant_id, skip=skip, limit=limit)
+    work_orders = crud_work_orders.get_work_orders(db, tenant_id=current_user.tenant_id, skip=skip, limit=limit)
     return work_orders
 
 @router.get("/{work_order_id}", response_model=schemas.WorkOrder)
@@ -61,7 +62,7 @@ def read_work_order(
     """
     Obtiene una orden de trabajo específica, verificando que pertenezca al tenant.
     """
-    db_work_order = crud.get_work_order(db, work_order_id=work_order_id, tenant_id=current_user.tenant_id)
+    db_work_order = crud_work_orders.get_work_order(db, work_order_id=work_order_id, tenant_id=current_user.tenant_id)
     if db_work_order is None:
         raise HTTPException(status_code=404, detail="Orden de trabajo no encontrada")
     return db_work_order
@@ -77,9 +78,9 @@ def update_work_order_status(
     Actualiza una orden de trabajo (ej. estado, costo), validando pertenencia.
     """
     # Primero, verificamos que la orden de trabajo exista y pertenezca al tenant.
-    db_work_order = crud.get_work_order(db, work_order_id=work_order_id, tenant_id=current_user.tenant_id)
+    db_work_order = crud_work_orders.get_work_order(db, work_order_id=work_order_id, tenant_id=current_user.tenant_id)
     if db_work_order is None:
         raise HTTPException(status_code=404, detail="Orden de trabajo no encontrada")
 
     # Si existe, procedemos a actualizarla.
-    return crud.update_work_order(db=db, work_order_id=work_order_id, work_order_data=work_order_update)
+    return crud_work_orders.update_work_order(db=db, work_order_id=work_order_id, work_order_data=work_order_update)

@@ -2,61 +2,47 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from .. import crud, models, schemas # <--- Importamos models
+from ..crud import crud_users
+from .. import models, schemas
 from ..database import get_db
-from ..security import get_current_user # <--- ¡IMPORTAMOS AL GUARDIÁN!
+from ..security import get_current_user
 
 router = APIRouter(
     prefix="/users",
-    tags=["Users"], # Corregido para consistencia
-    # Podemos añadir aquí una dependencia para que TODAS las rutas de este router
-    # requieran autenticación. Por ahora, lo haremos ruta por ruta.
-    # dependencies=[Depends(get_current_user)]
+    tags=["Users"],
+    dependencies=[Depends(get_current_user)]
 )
 
-# --- Endpoint de creación de usuario ---
-# Este endpoint sigue siendo público, ya que alguien tiene que poder crear el primer usuario.
-@router.post("/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    """
-    Crea un nuevo usuario en la base de datos.
-    - Verifica que el email no exista previamente.
-    - La contraseña se hashea en la capa CRUD.
-    """
-    db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email ya registrado")
-    
-    return crud.create_user(db=db, user=user)
-
-
-# --- Endpoint para obtener el usuario actual ---
-# Este es un endpoint de prueba perfecto para el guardián.
-@router.get("/me", response_model=schemas.User)
-def read_users_me(current_user: models.User = Depends(get_current_user)):
-    """
-    Devuelve los datos del usuario que está actualmente autenticado.
-    - La dependencia `get_current_user` hace todo el trabajo de validación.
-    - Si la ejecución llega aquí, significa que el token es válido.
-    - La función `get_current_user` nos devuelve el objeto User de la base de datos.
-    """
-    return current_user
-
-
-# --- Endpoint para obtener la lista de usuarios (AHORA PROTEGIDO) ---
 @router.get("/", response_model=List[schemas.User])
 def read_users(
     skip: int = 0, 
     limit: int = 100, 
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user) # <--- ¡EL GUARDIÁN ESTÁ AQUÍ!
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
 ):
     """
-    Devuelve una lista de usuarios. 
-    - AHORA REQUIERE AUTENTICACIÓN.
-    - El parámetro `current_user` no se usa directamente aquí, pero su mera presencia
-      obliga a FastAPI a ejecutar la dependencia `get_current_user` primero.
-      Si la dependencia falla, la ejecución nunca llegará al cuerpo de esta función.
+    Devuelve una lista de usuarios para el tenant del usuario autenticado.
     """
-    users = crud.get_users(db, skip=skip, limit=limit)
+    users = crud_users.get_users(db, tenant_id=current_user.tenant_id, skip=skip, limit=limit)
     return users
+
+@router.post("/", response_model=schemas.User)
+def create_user(
+    user: schemas.UserCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Crea un nuevo usuario dentro del mismo tenant que el usuario que realiza la acción.
+    La pertenencia al tenant se hereda, no se especifica en el body.
+    """
+    db_user = crud_users.get_user_by_email(db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Aquí asignamos el tenant_id del usuario actual al nuevo usuario.
+    user_data = schemas.UserCreateWithTenant(
+        **user.dict(), 
+        tenant_id=current_user.tenant_id
+    )
+    return crud_users.create_user(db=db, user=user_data)

@@ -2,15 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from .. import crud, models, schemas
+from ..crud import crud_clients
+from .. import models, schemas
 from ..database import get_db
 from ..security import get_current_user
 
 router = APIRouter(
     prefix="/clients",
-    tags=["Clients"], # Consistencia en mayúsculas
-    # ¡Este es el interruptor maestro! Todas las rutas en este router
-    # ahora requerirán autenticación sin tener que especificarlo en cada una.
+    tags=["Clients"],
     dependencies=[Depends(get_current_user)]
 )
 
@@ -21,12 +20,10 @@ def create_client(
     current_user: models.User = Depends(get_current_user)
 ):
     """
-    Crea un nuevo cliente para el tenant del usuario autenticado.
-    - El `tenant_id` se extrae de forma segura del token del usuario.
-    - Ya no es posible crear un cliente en un tenant ajeno.
+    Crea un nuevo cliente dentro del tenant del usuario autenticado.
+    El tenant_id se infiere del token del usuario, no se pasa en el body.
     """
-    # Pasamos el tenant_id del usuario actual a la función del CRUD
-    return crud.create_client(db=db, client=client, tenant_id=current_user.tenant_id)
+    return crud_clients.create_client(db=db, client=client, tenant_id=current_user.tenant_id)
 
 @router.get("/", response_model=List[schemas.Client])
 def read_clients(
@@ -36,10 +33,9 @@ def read_clients(
     current_user: models.User = Depends(get_current_user)
 ):
     """
-    Devuelve una lista de clientes **solo para el tenant del usuario autenticado**.
-    - Previene la fuga de datos entre tenants.
+    Devuelve una lista de todos los clientes del tenant del usuario autenticado.
     """
-    clients = crud.get_clients(db, tenant_id=current_user.tenant_id, skip=skip, limit=limit)
+    clients = crud_clients.get_clients(db, tenant_id=current_user.tenant_id, skip=skip, limit=limit)
     return clients
 
 @router.get("/{client_id}", response_model=schemas.Client)
@@ -51,7 +47,7 @@ def read_client(
     """
     Obtiene un cliente específico, verificando que pertenezca al tenant del usuario.
     """
-    db_client = crud.get_client(db, client_id=client_id, tenant_id=current_user.tenant_id)
+    db_client = crud_clients.get_client(db, client_id=client_id, tenant_id=current_user.tenant_id)
     if db_client is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return db_client
