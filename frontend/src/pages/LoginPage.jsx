@@ -91,8 +91,8 @@ const LoginPage = () => {
         </form>
         <div style={styles.separator}>o</div>
         {/* Enlace a la página de registro */}
-        <Link to="/registro" style={styles.link}>
-          Regístrese
+        <Link to="/register" style={styles.link}>
+          ¿No tienes una cuenta? Regístrate
         </Link>
       </div>
     </div>
