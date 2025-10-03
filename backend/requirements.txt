@@ -1,8 +1,9 @@
-fastapi
+Tranquilofastapi
 uvicorn[standard]
 psycopg2-binary
 SQLAlchemy
 passlib[bcrypt]
 python-jose[cryptography]
 pydantic-settings
-pydantic[email] # <--- DEPENDENCIA PARA VALIDACIÓN DE EMAIL
+pydantic[email]
+python-multipart # <--- DEPENDENCIA PARA FORMULARIOS
