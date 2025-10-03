@@ -1,10 +1,6 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
-import passlib.hash as _hash
-
-# Hashing de contraseñas
-def get_password_hash(password):
-    return _hash.bcrypt.hash(password)
+from .security import get_password_hash
 
 # --- Tenant --- 
 
@@ -32,8 +28,8 @@ def get_user(db: Session, user_id: int):
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+def get_users(db: Session, tenant_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.User).filter(models.User.tenant_id == tenant_id).offset(skip).limit(limit).all()
 
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = get_password_hash(user.password)
@@ -45,14 +41,14 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 # --- Client --- 
 
-def get_client(db: Session, client_id: int):
-    return db.query(models.Client).filter(models.Client.id == client_id).first()
+def get_client(db: Session, client_id: int, tenant_id: int):
+    return db.query(models.Client).filter(models.Client.id == client_id, models.Client.tenant_id == tenant_id).first()
 
 def get_clients(db: Session, tenant_id: int, skip: int = 0, limit: int = 100):
     return db.query(models.Client).filter(models.Client.tenant_id == tenant_id).offset(skip).limit(limit).all()
 
-def create_client(db: Session, client: schemas.ClientCreate):
-    db_client = models.Client(**client.dict())
+def create_client(db: Session, client: schemas.ClientCreate, tenant_id: int):
+    db_client = models.Client(**client.dict(), tenant_id=tenant_id)
     db.add(db_client)
     db.commit()
     db.refresh(db_client)
@@ -60,11 +56,17 @@ def create_client(db: Session, client: schemas.ClientCreate):
 
 # --- Vehicle --- 
 
-def get_vehicle(db: Session, vehicle_id: int):
-    return db.query(models.Vehicle).filter(models.Vehicle.id == vehicle_id).first()
+def get_vehicle(db: Session, vehicle_id: int, tenant_id: int):
+    return (db.query(models.Vehicle)
+              .join(models.Client, models.Vehicle.owner_id == models.Client.id)
+              .filter(models.Vehicle.id == vehicle_id, models.Client.tenant_id == tenant_id)
+              .first())
 
-def get_vehicles_by_client(db: Session, client_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Vehicle).filter(models.Vehicle.owner_id == client_id).offset(skip).limit(limit).all()
+def get_vehicles(db: Session, tenant_id: int, skip: int = 0, limit: int = 100):
+    return (db.query(models.Vehicle)
+              .join(models.Client, models.Vehicle.owner_id == models.Client.id)
+              .filter(models.Client.tenant_id == tenant_id)
+              .offset(skip).limit(limit).all())
 
 def create_vehicle(db: Session, vehicle: schemas.VehicleCreate):
     db_vehicle = models.Vehicle(**vehicle.dict())
@@ -75,11 +77,19 @@ def create_vehicle(db: Session, vehicle: schemas.VehicleCreate):
 
 # --- WorkOrder --- 
 
-def get_work_order(db: Session, work_order_id: int):
-    return db.query(models.WorkOrder).filter(models.WorkOrder.id == work_order_id).first()
+def get_work_order(db: Session, work_order_id: int, tenant_id: int):
+    return (db.query(models.WorkOrder)
+              .join(models.Vehicle, models.WorkOrder.vehicle_id == models.Vehicle.id)
+              .join(models.Client, models.Vehicle.owner_id == models.Client.id)
+              .filter(models.WorkOrder.id == work_order_id, models.Client.tenant_id == tenant_id)
+              .first())
 
-def get_work_orders_by_vehicle(db: Session, vehicle_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.WorkOrder).filter(models.WorkOrder.vehicle_id == vehicle_id).offset(skip).limit(limit).all()
+def get_work_orders(db: Session, tenant_id: int, skip: int = 0, limit: int = 100):
+    return (db.query(models.WorkOrder)
+              .join(models.Vehicle, models.WorkOrder.vehicle_id == models.Vehicle.id)
+              .join(models.Client, models.Vehicle.owner_id == models.Client.id)
+              .filter(models.Client.tenant_id == tenant_id)
+              .offset(skip).limit(limit).all())
 
 def create_work_order(db: Session, work_order: schemas.WorkOrderCreate):
     db_work_order = models.WorkOrder(**work_order.dict())
@@ -89,7 +99,8 @@ def create_work_order(db: Session, work_order: schemas.WorkOrderCreate):
     return db_work_order
 
 def update_work_order(db: Session, work_order_id: int, work_order_data: schemas.WorkOrderUpdate):
-    db_work_order = get_work_order(db, work_order_id)
+    # La validación de pertenencia se hará en el router antes de llamar aquí
+    db_work_order = db.query(models.WorkOrder).filter(models.WorkOrder.id == work_order_id).first()
     if not db_work_order:
         return None
     update_data = work_order_data.dict(exclude_unset=True)

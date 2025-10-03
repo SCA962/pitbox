@@ -39,8 +39,9 @@ class ClientBase(BaseModel):
     email: Optional[EmailStr] = None
     phone_number: str
 
+# El 'tenant_id' ya no se pasa en el body. Se infiere del usuario autenticado.
 class ClientCreate(ClientBase):
-    tenant_id: int
+    pass
 
 class Client(ClientBase):
     id: int
@@ -89,3 +90,11 @@ class WorkOrder(WorkOrderBase):
 
     class Config:
         orm_mode = True
+
+# -------- Token --------
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None

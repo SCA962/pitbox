@@ -5,8 +5,9 @@ services:
     build: ./frontend
     ports:
       - "5173:80"
-    volumes:
-      - ./frontend:/app
+    # No necesitamos un volumen aquí en producción, la imagen ya tiene el código
+    # volumes:
+    #   - ./frontend:/app
     depends_on:
       - backend
 
@@ -14,12 +15,15 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
+    # No necesitamos un volumen aquí tampoco
+    # volumes:
+    #   - ./backend:/app
     env_file:
       - ./.env
+    # MODIFICACIÓN CLAVE: Espera a que el servicio 'db' esté 'service_healthy'
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:15
@@ -29,6 +33,13 @@ services:
       - ./.env
     ports:
       - "5432:5432"
+    # MODIFICACIÓN CLAVE: Añadimos un chequeo de salud
+    healthcheck:
+      # Esta es la orden que Docker ejecutará para ver si la DB está sana
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s   # Comprueba cada 5 segundos
+      timeout: 5s    # Espera un máximo de 5 segundos por respuesta
+      retries: 5     # Inténtalo 5 veces antes de marcarlo como no saludable
 
 volumes:
   postgres_data:

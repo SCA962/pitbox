@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import engine
 from . import models
-from .routers import tenants, users, clients, vehicles, work_orders
+from .routers import tenants, users, clients, vehicles, work_orders, token # <--- IMPORTAMOS EL NUEVO ROUTER
 
 # Crea las tablas en la base de datos (si no existen)
 models.Base.metadata.create_all(bind=engine)
@@ -32,6 +32,7 @@ app.add_middleware(
 
 # --- Routers ---
 # Monta todos los routers de la aplicación bajo el prefijo /api
+app.include_router(token.router, prefix="/api") # <--- AÑADIMOS EL ROUTER DE TOKEN
 app.include_router(tenants.router, prefix="/api", tags=["Tenants"])
 app.include_router(users.router, prefix="/api", tags=["Users"])
 app.include_router(clients.router, prefix="/api", tags=["Clients"])

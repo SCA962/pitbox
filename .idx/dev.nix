@@ -26,6 +26,7 @@ in
     pkgs.docker
     pkgs.docker-compose
     pkgs.nodejs
+    pkgs.openssl # <--- ¡AQUÍ ESTÁ! Añadimos la herramienta openssl.
   ]; 
 
   idx = {
