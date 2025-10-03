@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-// Reutilizamos los mismos estilos que LoginPage por ahora
+// Estilos (los mismos que en LoginPage para consistencia)
 const styles = {
   container: {
     display: 'flex',
@@ -35,23 +35,68 @@ const styles = {
     padding: '0.75rem',
     border: 'none',
     borderRadius: '4px',
-    backgroundColor: '#28a745', // Un color verde para diferenciar
+    backgroundColor: '#28a745', // Un verde para diferenciar de login
     color: 'white',
     fontSize: '1rem',
     cursor: 'pointer',
   },
+  // Estilo para mensajes de error o éxito
+  message: {
+      textAlign: 'center',
+      padding: '10px',
+      marginTop: '10px',
+      borderRadius: '5px',
+      color: 'white',
+  },
+  error: {
+      backgroundColor: '#dc3545', // Rojo para errores
+  },
+  success: {
+      backgroundColor: '#28a745', // Verde para éxito
+  }
 };
 
 const RegisterPage = () => {
-  const [tenantName, setTenantName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [workshopName, setWorkshopName] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [message, setMessage] = useState(null);
+  const [isError, setIsError] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    // Lógica de registro irá aquí
-    console.log('Intentando registrar con:', { tenantName, email, password });
+    setMessage(null);
+    setIsError(false);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workshop_name: workshopName,
+          admin_email: adminEmail,
+          admin_password: adminPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Si la respuesta no es 2xx, lanza un error con el detalle del backend
+        throw new Error(data.detail || 'Ocurrió un error al registrar.');
+      }
+
+      // Si el registro es exitoso
+      setIsError(false);
+      setMessage('¡Registro exitoso! Ahora puedes iniciar sesión.');
+      // Opcional: Redirigir a la página de login después de unos segundos
+
+    } catch (error) {
+      setIsError(true);
+      setMessage(error.message);
+    }
   };
 
   return (
@@ -63,38 +108,35 @@ const RegisterPage = () => {
             type="text"
             placeholder="Nombre del Taller"
             style={styles.input}
-            value={tenantName}
-            onChange={(e) => setTenantName(e.target.value)}
+            value={workshopName}
+            onChange={(e) => setWorkshopName(e.target.value)}
             required
           />
           <input
             type="email"
             placeholder="Correo Electrónico del Administrador"
             style={styles.input}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={adminEmail}
+            onChange={(e) => setAdminEmail(e.target.value)}
             required
           />
           <input
             type="password"
-            placeholder="Contraseña"
+            placeholder="Contraseña del Administrador"
             style={styles.input}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Confirmar Contraseña"
-            style={styles.input}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            value={adminPassword}
+            onChange={(e) => setAdminPassword(e.target.value)}
             required
           />
           <button type="submit" style={styles.button}>
             Registrarse
           </button>
         </form>
+        {message && (
+            <div style={{ ...styles.message, ...(isError ? styles.error : styles.success) }}>
+                {message}
+            </div>
+        )}
       </div>
     </div>
   );
