@@ -1,33 +1,31 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
+// Por ahora, asumimos que no hay un usuario autenticado.
+// Más adelante, aquí habrá lógica para verificar el token JWT.
+const isAuthenticated = false;
 
 function App() {
-  const [apiStatus, setApiStatus] = useState('cargando...');
-
-  useEffect(() => {
-    // Esta petición se dirige al backend gracias a la configuración del proxy en vite.config.js
-    // Apuntamos a la ruta de chequeo de salud que creamos en FastAPI.
-    fetch('/api/health-check')
-      .then(res => {
-        if (!res.ok) {
-          throw new Error('La respuesta del backend no fue OK');
-        }
-        return res.json();
-      })
-      .then(data => {
-        // El backend responde con {"status": "ok", ...}, así que usamos data.status
-        setApiStatus(data.status);
-      })
-      .catch((error) => {
-        console.error('Error al contactar el backend:', error);
-        setApiStatus('error');
-      });
-  }, []);
-
   return (
-    <div>
-      <h1>Bienvenido al ERP para Talleres</h1>
-      <p>Estado de la conexión con el Backend: <strong>{apiStatus}</strong></p>
-    </div>
+    <Router>
+      <Routes>
+        {/* Ruta principal: si estás autenticado va al dashboard, si no, al login */}
+        <Route 
+          path="/" 
+          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
+        />
+        
+        {/* Rutas públicas */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/registro" element={<RegisterPage />} />
+
+        {/* Rutas privadas (ejemplo) */}
+        {/* <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />} /> */}
+
+      </Routes>
+    </Router>
   );
 }
 
