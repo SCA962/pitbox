@@ -2,6 +2,13 @@ from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
 
+# -------- Auth --------
+# Schema para el registro de un nuevo Tenant
+class TenantRegistration(BaseModel):
+    workshop_name: str
+    admin_email: EmailStr
+    admin_password: str
+
 # -------- Tenant --------
 class TenantBase(BaseModel):
     name: str
@@ -24,10 +31,12 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
     tenant_id: int
+    is_admin: bool = False # Por defecto, los usuarios no son admins
 
 class User(UserBase):
     id: int
     is_active: bool
+    is_admin: bool
     tenant_id: int
 
     class Config:
