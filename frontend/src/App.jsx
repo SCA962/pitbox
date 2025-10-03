@@ -4,11 +4,23 @@ function App() {
   const [apiStatus, setApiStatus] = useState('cargando...');
 
   useEffect(() => {
-    // El proxy de Vite redirigirá esta petición a http://backend:8000/api/health
-    fetch('/api/health')
-      .then(res => res.json())
-      .then(data => setApiStatus(data.status))
-      .catch(() => setApiStatus('error'));
+    // Esta petición se dirige al backend gracias a la configuración del proxy en vite.config.js
+    // Apuntamos a la ruta de chequeo de salud que creamos en FastAPI.
+    fetch('/api/health-check')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('La respuesta del backend no fue OK');
+        }
+        return res.json();
+      })
+      .then(data => {
+        // El backend responde con {"status": "ok", ...}, así que usamos data.status
+        setApiStatus(data.status);
+      })
+      .catch((error) => {
+        console.error('Error al contactar el backend:', error);
+        setApiStatus('error');
+      });
   }, []);
 
   return (

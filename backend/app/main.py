@@ -1,3 +1,4 @@
+# backend/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,9 +20,10 @@ app = FastAPI(
 )
 
 # --- Middlewares ---
-# Configuración de CORS
+# Configuración de CORS para permitir que el frontend se conecte
 app.add_middleware(
     CORSMiddleware,
+    # Orígenes permitidos (tu app de React)
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -29,22 +31,18 @@ app.add_middleware(
 )
 
 # --- Routers ---
-# Se añade el prefijo /api a todos los routers para que coincidan con el proxy de Vite
-app.include_router(tenants.router, prefix="/api")
-app.include_router(users.router, prefix="/api")
-app.include_router(clients.router, prefix="/api")
-app.include_router(vehicles.router, prefix="/api")
-app.include_router(work_orders.router, prefix="/api")
+# Monta todos los routers de la aplicación bajo el prefijo /api
+app.include_router(tenants.router, prefix="/api", tags=["Tenants"])
+app.include_router(users.router, prefix="/api", tags=["Users"])
+app.include_router(clients.router, prefix="/api", tags=["Clients"])
+app.include_router(vehicles.router, prefix="/api", tags=["Vehicles"])
+app.include_router(work_orders.router, prefix="/api", tags=["Work Orders"])
 
-# --- Rutas base ---
-@app.get("/api", tags=["Root"])
-def read_root():
-    return {"message": "Bienvenido al API del ERP para Talleres"}
-
-@app.get("/api/health", tags=["Health Check"])
-async def health_check():
-    # Esta es la ruta que el frontend está esperando
-    return {"status": "ok"}
-
-# La ruta @app.get("/") que existía antes ya no es necesaria
-# ya que hemos movido la raíz a /api
+# --- Endpoint de Prueba de Salud ---
+# Esta es la ruta que el frontend usará para verificar si el backend está vivo.
+@app.get("/api/health-check")
+def health_check():
+    """
+    Endpoint simple para verificar que la API está funcionando.
+    """
+    return {"status": "ok", "message": "Backend is running correctly"}
