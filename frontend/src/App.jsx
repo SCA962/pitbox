@@ -11,15 +11,12 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Ruta principal: si estás autenticado va al dashboard, si no, al login */}
-        <Route 
-          path="/" 
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
-        />
-        
+        {/* La página de login es ahora la ruta principal */}
+        <Route path="/" element={<LoginPage />} />
+
         {/* Rutas públicas */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* Rutas privadas (ejemplo) */}
         {/* <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />} /> */}
