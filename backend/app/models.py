@@ -19,6 +19,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
     tenant_id = Column(Integer, ForeignKey("tenants.id"))
 
     tenant = relationship("Tenant", back_populates="users")
