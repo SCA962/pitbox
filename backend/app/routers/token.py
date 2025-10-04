@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
-from ..database import get_db
+from app.database import get_db
 from ..security import verify_password, create_access_token
 
 # Creamos un nuevo router para gestionar la autenticación y la emisión de tokens
