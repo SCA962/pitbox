@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from .. import schemas, crud, models
-# Corrección: Se importa get_db desde database, no dependencies
 from ..database import get_db 
 from ..security import get_current_user, create_access_token, verify_password
 
@@ -10,8 +9,11 @@ router = APIRouter(
     tags=["Auth"],
 )
 
-@router.post("/register/tenant", response_model=schemas.Tenant)
+# ----> INICIO DEL CAMBIO <----
+# Se ajusta la ruta a "/register" para que coincida con la llamada del frontend (/api/register)
+@router.post("/register", response_model=schemas.Tenant)
 def register_tenant(tenant: schemas.TenantCreate, db: Session = Depends(get_db)):
+# ----> FIN DEL CAMBIO <----
     """
     Crea un nuevo Tenant (taller) en el sistema.
     Este es el primer paso para un nuevo cliente (taller).
