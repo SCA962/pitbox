@@ -2,7 +2,9 @@ fastapi
 uvicorn[standard]
 psycopg2-binary
 SQLAlchemy
-passlib[bcrypt]
+# Se pinean las versiones para garantizar la compatibilidad y un entorno reproducible.
+passlib==1.7.4
+bcrypt==4.0.1
 python-jose[cryptography]
 pydantic-settings
 pydantic[email]
