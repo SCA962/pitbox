@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // Importamos Link
+import { Link, useNavigate } from 'react-router-dom';
 
-// Estilos...
 const styles = {
   container: {
     display: 'flex',
@@ -41,27 +40,54 @@ const styles = {
     fontSize: '1rem',
     cursor: 'pointer',
   },
-  separator: {
-    textAlign: 'center',
-    margin: '1rem 0',
-    color: '#6c757d',
-  },
   link: {
     display: 'block',
     textAlign: 'center',
     color: '#007bff',
     textDecoration: 'none',
-    marginTop: '0.5rem',
-  }
+    marginTop: '1rem',
+  },
+  error: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: '1rem',
+  },
 };
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log('Intentando iniciar sesión con:', { email, password });
+    setError(''); // Limpiar errores previos
+
+    const formData = new URLSearchParams();
+    formData.append('username', email);
+    formData.append('password', password);
+
+    try {
+      const response = await fetch('/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('accessToken', data.access_token);
+        navigate('/dashboard'); // Redirigir al Dashboard
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to login');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    }
   };
 
   return (
@@ -69,6 +95,7 @@ const LoginPage = () => {
       <div style={styles.formContainer}>
         <h2 style={styles.title}>Iniciar Sesión</h2>
         <form onSubmit={handleSubmit}>
+          {error && <p style={styles.error}>{error}</p>} 
           <input
             type="email"
             placeholder="Correo Electrónico"
@@ -90,7 +117,6 @@ const LoginPage = () => {
           </button>
         </form>
         <div style={styles.separator}>o</div>
-        {/* Enlace a la página de registro */}
         <Link to="/register" style={styles.link}>
           ¿No tienes una cuenta? Regístrate
         </Link>
